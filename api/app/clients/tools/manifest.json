@@ -123,7 +123,6 @@
   },
   {
     "name": "Polygon Data Fetcher",
-    "pluginKey": "polygon_data_fetcher",
     "description": "Access real-time and historical data on stocks, options, and cryptocurrencies through the Polygon.io API.",
     "icon": "https://ttg-site.b-cdn.net/wp-content/uploads/2018/04/learntradeprofit.png",
     "authConfig": [
