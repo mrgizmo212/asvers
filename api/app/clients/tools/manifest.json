@@ -122,6 +122,19 @@
     ]
   },
   {
+    "name": "Polygon.io Data",
+    "pluginKey": "polygon_data_fetcher",
+    "description": "Access real-time and historical data on stocks, options, and cryptocurrencies through the Polygon.io API.",
+    "icon": "https://ttg-site.b-cdn.net/wp-content/uploads/2018/04/learntradeprofit.png", // Placeholder icon URL
+    "authConfig": [
+      {
+        "authField": "POLYGON_API_KEY",
+        "label": "Polygon API Key",
+        "description": "This is your API key for authenticating requests with Polygon.io. Visit <a href='https://polygon.io/docs/getting-started'>Polygon.io Docs</a> for instructions on how to obtain your API key."
+      }
+    ]
+  },
+  {
     "name": "Calculator",
     "pluginKey": "calculator",
     "description": "Perform simple and complex mathematical calculations.",
