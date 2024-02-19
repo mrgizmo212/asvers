@@ -1,4 +1,4 @@
-const { z } = require('zod');
+const { z } = require('zod'); // <-- need to use this to define schema
 const { Tool } = require('@langchain/core/tools');
 const { getEnvironmentVariable } = require('@langchain/core/utils/env');
 const fetch = require('node-fetch'); // Assuming node-fetch is used for HTTP requests
@@ -11,13 +11,25 @@ class PolygonDataFetcher extends Tool {
   constructor(fields = {}) {
     super(fields);
     this.envVar = 'POLYGON_API_KEY';
+    /* Used to initialize the Tool without necessary variables. */
+    this.override = fields.override ?? false;
     this.apiKey = fields.apiKey ?? this.getApiKey();
     this.baseUrl = 'https://api.polygon.io';
+    /* name is required to match with manifest.json `pluginKey` */
+    this.name = 'polygon_data_fetcher';
+    /*
+    TODO: missing zod schema for _call method input
+    this.schema = z.object({ etc. });
+
+    NOTE: There are several methods here, but each tool should only have one main method to be invoked through invoking `_call`.
+
+    e.g.: PolygonDataFetcher._call(schema);
+    */
   }
 
   getApiKey() {
     const apiKey = getEnvironmentVariable(this.envVar);
-    if (!apiKey) {
+    if (!apiKey && !this.override) {
       throw new Error(`Missing ${this.envVar} environment variable.`);
     }
     return apiKey;
@@ -38,7 +50,9 @@ class PolygonDataFetcher extends Tool {
   }
 
   // Method to fetch the most up-to-date market data for a single traded stock ticker
-  async getStockTickerData(stocksTicker, includeLastQuote = false, includeLastTrade = false, includePrevDay = false, includeMin = false) {
+  async getStockTickerData(
+    stocksTicker, includeLastQuote = false, includeLastTrade = false, includePrevDay = false, includeMin = false,
+  ) {
     const endpoint = `/v2/snapshot/locale/us/markets/stocks/tickers/${stocksTicker}`;
     let queryParams = `?apiKey=${this.apiKey}`;
     queryParams += includeLastQuote ? '&includeLastQuote=true' : '';
@@ -58,7 +72,7 @@ class PolygonDataFetcher extends Tool {
     return response.json();
   }
 
-  // Additional methods for other endpoints can be added here following the same pattern
+  /* TODO: missing _call method that takes schema defined in constructor as input */
 }
 
 module.exports = PolygonDataFetcher;
