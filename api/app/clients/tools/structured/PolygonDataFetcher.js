@@ -37,6 +37,18 @@ class PolygonDataFetcher extends Tool {
     return this.fetchData(url);
   }
 
+  // Method to fetch the most up-to-date market data for a single traded stock ticker
+  async getStockTickerData(stocksTicker, includeLastQuote = false, includeLastTrade = false, includePrevDay = false, includeMin = false) {
+    const endpoint = `/v2/snapshot/locale/us/markets/stocks/tickers/${stocksTicker}`;
+    let queryParams = `?apiKey=${this.apiKey}`;
+    queryParams += includeLastQuote ? '&includeLastQuote=true' : '';
+    queryParams += includeLastTrade ? '&includeLastTrade=true' : '';
+    queryParams += includePrevDay ? '&includePrevDay=true' : '';
+    queryParams += includeMin ? '&includeMin=true' : '';
+    const url = `${this.baseUrl}${endpoint}${queryParams}`;
+    return this.fetchData(url);
+  }
+
   // General method to perform fetch operations
   async fetchData(url) {
     const response = await fetch(url);
