@@ -22,6 +22,7 @@ const {
   CodeSherpaTools,
   StructuredWolfram,
   TavilySearchResults,
+  PolygonDataFetcher,
 } = require('../');
 const { loadToolSuite } = require('./loadToolSuite');
 const { loadSpecs } = require('./loadSpecs');
@@ -157,6 +158,7 @@ const loadTools = async ({
   skipSpecs = false,
 }) => {
   const toolConstructors = {
+    polygon_data_fetcher: PolygonDataFetcher,
     tavily_search_results_json: TavilySearchResults,
     calculator: Calculator,
     google: GoogleSearchAPI,
