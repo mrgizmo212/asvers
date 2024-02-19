@@ -1,0 +1,89 @@
+{
+  "name": "polygon_api_configuration",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "default": "https://api.polygon.io",
+        "description": "The base URL for the Polygon.io API endpoints."
+      },
+      "apiKey": {
+        "type": "string",
+        "minLength": 1,
+        "description": "The API key for authenticating requests to the Polygon.io API.",
+        "default": "0cv62bvSH9Xe_qHUVgkq4AE1ha9n7E7S"
+      },
+      "endpoints": {
+        "type": "array",
+        "items": [
+          {
+            "name": "getStockDailyOpenClose",
+            "path": "/v1/open-close/{stocksTicker}/{date}",
+            "description": "Fetches daily open/close for a specified stock on a given date.",
+            "parameters": {
+              "stocksTicker": {
+                "type": "string",
+                "description": "The stock ticker symbol."
+              },
+              "date": {
+                "type": "string",
+                "format": "date",
+                "description": "The date for which to fetch the daily open/close data."
+              }
+            }
+          },
+          {
+            "name": "getStockPreviousClose",
+            "path": "/v2/aggs/ticker/{stocksTicker}/prev",
+            "description": "Fetches the previous day's OHLC data for a specified stock.",
+            "parameters": {
+              "stocksTicker": {
+                "type": "string",
+                "description": "The stock ticker symbol."
+              }
+            }
+          },
+          {
+            "name": "getStockTickerData",
+            "path": "/v2/snapshot/locale/us/markets/stocks/tickers/{stocksTicker}",
+            "description": "Fetches the most up-to-date market data for a single traded stock ticker.",
+            "parameters": {
+              "stocksTicker": {
+                "type": "string",
+                "description": "The stock ticker symbol."
+              },
+              "includeLastQuote": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include the most recent quote."
+              },
+              "includeLastTrade": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include the most recent trade."
+              },
+              "includePrevDay": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include the previous day's bar."
+              },
+              "includeMin": {
+                "type": "boolean",
+                "default": false,
+                "description": "Whether to include the most recent minute bar."
+              }
+            }
+          }
+        ],
+        "description": "The available endpoints for fetching market data from Polygon.io."
+      }
+    },
+    "required": [
+      "apiKey",
+      "endpoints"
+    ],
+    "additionalProperties": false
+  },
+  "description": "Configuration for accessing various endpoints of the Polygon.io API, including market data for stocks. Allows fetching up-to-date market data, daily open/close, previous day's OHLC, and market status."
+}
