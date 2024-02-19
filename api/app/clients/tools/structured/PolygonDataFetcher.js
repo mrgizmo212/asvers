@@ -1,7 +1,7 @@
-const { z } = require('zod'); // <-- need to use this to define schema
+const { z } = require('zod');
 const { Tool } = require('@langchain/core/tools');
 const { getEnvironmentVariable } = require('@langchain/core/utils/env');
-const fetch = require('node-fetch'); // Assuming node-fetch is used for HTTP requests
+const fetch = require('node-fetch');
 
 class PolygonDataFetcher extends Tool {
   static lc_name() {
@@ -11,20 +11,20 @@ class PolygonDataFetcher extends Tool {
   constructor(fields = {}) {
     super(fields);
     this.envVar = 'POLYGON_API_KEY';
-    /* Used to initialize the Tool without necessary variables. */
     this.override = fields.override ?? false;
     this.apiKey = fields.apiKey ?? this.getApiKey();
     this.baseUrl = 'https://api.polygon.io';
-    /* name is required to match with manifest.json `pluginKey` */
     this.name = 'polygon_data_fetcher';
-    /*
-    TODO: missing zod schema for _call method input
-    this.schema = z.object({ etc. });
 
-    NOTE: There are several methods here, but each tool should only have one main method to be invoked through invoking `_call`.
-
-    e.g.: PolygonDataFetcher._call(schema);
-    */
+    this.schema = z.object({
+      action: z.enum(['getStockDailyOpenClose', 'getStockPreviousClose', 'getStockTickerData']),
+      stocksTicker: z.string().min(1),
+      date: z.string().optional(),
+      includeLastQuote: z.boolean().optional(),
+      includeLastTrade: z.boolean().optional(),
+      includePrevDay: z.boolean().optional(),
+      includeMin: z.boolean().optional(),
+    });
   }
 
   getApiKey() {
@@ -72,7 +72,25 @@ class PolygonDataFetcher extends Tool {
     return response.json();
   }
 
-  /* TODO: missing _call method that takes schema defined in constructor as input */
+  async _call(input) {
+    const validationResult = this.schema.safeParse(input);
+    if (!validationResult.success) {
+      throw new Error(`Validation failed: ${JSON.stringify(validationResult.error.issues)}`);
+    }
+
+    const { action, stocksTicker, date, includeLastQuote, includeLastTrade, includePrevDay, includeMin } = validationResult.data;
+    
+    switch (action) {
+      case 'getStockDailyOpenClose':
+        return await this.getStockDailyOpenClose(stocksTicker, date);
+      case 'getStockPreviousClose':
+        return await this.getStockPreviousClose(stocksTicker);
+      case 'getStockTickerData':
+        return await this.getStockTickerData(stocksTicker, includeLastQuote, includeLastTrade, includePrevDay, includeMin);
+      default:
+        throw new Error('Invalid action specified');
+    }
+  }
 }
 
 module.exports = PolygonDataFetcher;
