@@ -42,7 +42,7 @@ router.post('/', buildEndpointOption, setHeaders, async (req, res) => {
     text,
     model,
     files = [],
-    promptPrefix,
+    promptPrefix: _promptPrefix,
     assistant_id,
     instructions,
     thread_id: _thread_id,
@@ -50,6 +50,14 @@ router.post('/', buildEndpointOption, setHeaders, async (req, res) => {
     conversationId: convoId,
     parentMessageId: _parentId = Constants.NO_PARENT,
   } = req.body;
+
+  const currentDateString = new Date().toLocaleDateString('en-us', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+
+  const promptPrefix = `Today's date: ${currentDateString}\n\n${_promptPrefix ?? ''}`;
 
   /** @type {Partial<TAssistantEndpoint>} */
   const assistantsConfig = req.app.locals?.[EModelEndpoint.assistants];
