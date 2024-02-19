@@ -129,7 +129,7 @@
     "authConfig": [
       {
         "authField": "POLYGON_API_KEY",
-        "label": "Polygon API Key",
+        "label": "POLYGON_API_KEY",
         "description": "This is your API key for authenticating requests with Polygon.io. Visit <a href='https://polygon.io/docs/getting-started'>Polygon.io Docs</a> for instructions on how to obtain your API key."
       }
     ]
