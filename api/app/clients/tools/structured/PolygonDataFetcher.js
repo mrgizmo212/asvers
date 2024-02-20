@@ -28,6 +28,14 @@ class PolygonDataFetcher extends Tool {
       includeLastTrade: z.boolean().optional(),
       includePrevDay: z.boolean().optional(),
       includeMin: z.boolean().optional(),
+      // New parameters for aggregate bars
+      multiplier: z.number().optional(),
+      timespan: z.string().optional(),
+      from: z.string().optional(),
+      to: z.string().optional(),
+      adjusted: z.boolean().optional(),
+      sort: z.string().optional(),
+      limit: z.number().optional(),
     });
   }
 
@@ -39,21 +47,18 @@ class PolygonDataFetcher extends Tool {
     return apiKey;
   }
 
-  // Example method to fetch daily open/close for a stock
   async getStockDailyOpenClose(stocksTicker, date) {
     const endpoint = `/v1/open-close/${stocksTicker}/${date}`;
     const url = `${this.baseUrl}${endpoint}?apiKey=${this.apiKey}`;
     return this.fetchData(url);
   }
 
-  // Example method to fetch previous day's OHLC for a stock
   async getStockPreviousClose(stocksTicker) {
     const endpoint = `/v2/aggs/ticker/${stocksTicker}/prev`;
     const url = `${this.baseUrl}${endpoint}?apiKey=${this.apiKey}`;
     return this.fetchData(url);
   }
 
-  // Method to fetch the most up-to-date market data for a single traded stock ticker
   async getStockTickerData(
     stocksTicker,
     includeLastQuote = false,
@@ -71,7 +76,13 @@ class PolygonDataFetcher extends Tool {
     return this.fetchData(url);
   }
 
-  // General method to perform fetch operations
+  async getStockAggregates(stocksTicker, multiplier, timespan, from, to, adjusted = true, sort = 'asc', limit = 5000) {
+    const endpoint = `/v2/aggs/ticker/${stocksTicker}/range/${multiplier}/${timespan}/${from}/${to}`;
+    let queryParams = `?apiKey=${this.apiKey}&adjusted=${adjusted}&sort=${sort}&limit=${limit}`;
+    const url = `${this.baseUrl}${endpoint}${queryParams}`;
+    return this.fetchData(url);
+  }
+
   async fetchData(url) {
     const response = await fetch(url);
     if (!response.ok) {
@@ -109,42 +120,55 @@ class PolygonDataFetcher extends Tool {
       date = this.formatDate(new Date());
     }
 
+    let results = {};
+
     try {
-      let results = {};
+      results.dailyOpenClose = await this.getStockDailyOpenClose(stocksTicker, date);
+    } catch (error) {
+      results.dailyOpenClose = {
+        error: error.message ?? `An error occurred using ${this.name}, likely not a trading day`,
+      };
+    }
 
-      try {
-        results.dailyOpenClose = await this.getStockDailyOpenClose(stocksTicker, date);
-      } catch (error) {
-        results.dailyOpenClose = {
-          error: error.message ?? `An error occurred using ${this.name}, likely not a trading day`,
-        };
-      }
+    try {
+      results.previousClose = await this.getStockPreviousClose(stocksTicker);
+    } catch (error) {
+      results.previousClose = {
+        error: error.message ?? `An error occurred using ${this.name}, likely not a trading day`,
+      };
+    }
 
-      try {
-        results.previousClose = await this.getStockPreviousClose(stocksTicker);
-      } catch (error) {
-        results.previousClose = {
-          error: error.message ?? `An error occurred using ${this.name}, likely not a trading day`,
-        };
-      }
+    try {
+      results.tickerData = await this.getStockTickerData(
+        stocksTicker,
+        includeLastQuote,
+        includeLastTrade,
+        includePrevDay,
+        includeMin,
+      );
+    } catch (error) {
+      results.tickerData = { error: error.message ?? `An error occurred using ${this.name}` };
+    }
 
+    // Handling fetching aggregate bars
+    if (input.multiplier && input.timespan && input.from && input.to) {
       try {
-        results.tickerData = await this.getStockTickerData(
-          stocksTicker,
-          includeLastQuote,
-          includeLastTrade,
-          includePrevDay,
-          includeMin,
+        results.aggregates = await this.getStockAggregates(
+          input.stocksTicker,
+          input.multiplier,
+          input.timespan,
+          input.from,
+          input.to,
+          input.adjusted,
+          input.sort,
+          input.limit
         );
       } catch (error) {
-        results.tickerData = { error: error.message ?? `An error occurred using ${this.name}` };
+        results.aggregates = { error: error.message ?? `An error occurred fetching aggregates using ${this.name}` };
       }
-
-      // Now `results` contains the response from all three methods
-      return JSON.stringify(results);
-    } catch (error) {
-      return JSON.stringify({ error: error.message ?? `An error occurred using ${this.name}` });
     }
+
+    return JSON.stringify(results);
   }
 }
 
