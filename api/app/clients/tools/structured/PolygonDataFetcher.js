@@ -18,7 +18,12 @@ class PolygonDataFetcher extends Tool {
 
     this.schema = z.object({
       stocksTicker: z.string().min(1).describe('Specify a case-sensitive stock ticker symbol.'),
-      date: z.string().optional().describe('Only for specific dates. The date of the requested open/close in the format YYYY-MM-DD. Defaults to the current date and can be omitted.'),
+      date: z
+        .string()
+        .optional()
+        .describe(
+          'Only for specific dates. The date of the requested open/close in the format YYYY-MM-DD. Defaults to the current date and can be omitted.',
+        ),
       includeLastQuote: z.boolean().optional(),
       includeLastTrade: z.boolean().optional(),
       includePrevDay: z.boolean().optional(),
@@ -54,7 +59,13 @@ class PolygonDataFetcher extends Tool {
     return this.fetchData(url);
   }
 
-  async getStockTickerData(stocksTicker, includeLastQuote = false, includeLastTrade = false, includePrevDay = false, includeMin = false) {
+  async getStockTickerData(
+    stocksTicker,
+    includeLastQuote = false,
+    includeLastTrade = false,
+    includePrevDay = false,
+    includeMin = false,
+  ) {
     const endpoint = `/v2/snapshot/locale/us/markets/stocks/tickers/${stocksTicker}`;
     let queryParams = `?apiKey=${this.apiKey}`;
     queryParams += includeLastQuote ? '&includeLastQuote=true' : '';
@@ -96,25 +107,14 @@ class PolygonDataFetcher extends Tool {
     return [year, month, day].join('-');
   }
 
-  // Method to format aggregate bars results into a simple table format
-  formatAggregatesAsTable(aggregates) {
-    let table = 'Volume | VWAP | Open | Close | High | Low | Timestamp | Transactions\n';
-    table += '-------|------|------|-------|------|-----|-----------|--------------\n';
-
-    aggregates.results.forEach(result => {
-        table += `${result.v} | ${result.vw} | ${result.o} | ${result.c} | ${result.h} | ${result.l} | ${new Date(result.t).toLocaleString()} | ${result.n}\n`;
-    });
-
-    return table;
-  }
-
   async _call(input) {
     const validationResult = this.schema.safeParse(input);
     if (!validationResult.success) {
       throw new Error(`Validation failed: ${JSON.stringify(validationResult.error.issues)}`);
     }
 
-    let { stocksTicker, date, includeLastQuote, includeLastTrade, includePrevDay, includeMin } = validationResult.data;
+    let { stocksTicker, date, includeLastQuote, includeLastTrade, includePrevDay, includeMin } =
+      validationResult.data;
 
     if (!date) {
       date = this.formatDate(new Date());
@@ -123,19 +123,49 @@ class PolygonDataFetcher extends Tool {
     let results = {};
 
     try {
-      if (input.stocksTicker && date) {
-        results.dailyOpenClose = await this.getStockDailyOpenClose(stocksTicker, date);
-      }
-      if (input.stocksTicker) {
-        results.previousClose = await this.getStockPreviousClose(stocksTicker);
-        results.tickerData = await this.getStockTickerData(stocksTicker, includeLastQuote, includeLastTrade, includePrevDay, includeMin);
-      }
-      if (input.multiplier && input.timespan && input.from && input.to) {
-        const aggregatesResult = await this.getStockAggregates(stocksTicker, input.multiplier, input.timespan, input.from, input.to, input.adjusted, input.sort, input.limit);
-        results.aggregates = this.formatAggregatesAsTable(aggregatesResult);
-      }
+      results.dailyOpenClose = await this.getStockDailyOpenClose(stocksTicker, date);
     } catch (error) {
-      results.error = error.message ?? `An error occurred using ${this.name}`;
+      results.dailyOpenClose = {
+        error: error.message ?? `An error occurred using ${this.name}, likely not a trading day`,
+      };
+    }
+
+    try {
+      results.previousClose = await this.getStockPreviousClose(stocksTicker);
+    } catch (error) {
+      results.previousClose = {
+        error: error.message ?? `An error occurred using ${this.name}, likely not a trading day`,
+      };
+    }
+
+    try {
+      results.tickerData = await this.getStockTickerData(
+        stocksTicker,
+        includeLastQuote,
+        includeLastTrade,
+        includePrevDay,
+        includeMin,
+      );
+    } catch (error) {
+      results.tickerData = { error: error.message ?? `An error occurred using ${this.name}` };
+    }
+
+    // Handling fetching aggregate bars
+    if (input.multiplier && input.timespan && input.from && input.to) {
+      try {
+        results.aggregates = await this.getStockAggregates(
+          input.stocksTicker,
+          input.multiplier,
+          input.timespan,
+          input.from,
+          input.to,
+          input.adjusted,
+          input.sort,
+          input.limit
+        );
+      } catch (error) {
+        results.aggregates = { error: error.message ?? `An error occurred fetching aggregates using ${this.name}` };
+      }
     }
 
     return JSON.stringify(results);
