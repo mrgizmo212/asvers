@@ -28,7 +28,7 @@ class PolygonDataFetcher extends Tool {
       includeLastTrade: z.boolean().optional(),
       includePrevDay: z.boolean().optional(),
       includeMin: z.boolean().optional(),
-      // New parameters for aggregate bars
+      // New parameters for aggregate bars pf a stock
       multiplier: z.number().optional(),
       timespan: z.string().optional(),
       from: z.string().optional(),
